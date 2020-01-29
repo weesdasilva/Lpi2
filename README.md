@@ -200,10 +200,78 @@ dig google.com @127.0.0.1
 Obs: No dig temos que colocar um @ na frente do endereço.
 
 # **Comandos de Gerenciamento**
+
+Existe formas de verificar se a sintax do arquivo de configuração estão corretas:
+
+**Padrão:**
+* **named-checkconf** - binario parão do named que checa por padrão as configurações do arquivoo /etc/named.conf
+* **named-checkzone**
+
 **RNDC - Remote Name Daemon Control (Controle de Daemon de Nome Remoto)** - É um binario que gerencia o nosso bind9.
 
 Parâmetros:
-* status - Verifica o status do servidor DNS.
-* reload - Recarrega toda a configuração do bind.
-* flush - Limpra o cache de dns.
-* reconfig -  Reconfigura apenas os arquivos de configuração e zona
+* **status** - Verifica o status do servidor DNS.
+* **reload** - Recarrega toda a configuração do bind.
+* **flush** - Limpra o cache de dns.
+* **reconfig** -  Reconfigura apenas os arquivos de configuração e zona
+
+# **Loggin in named**
+
+É possivel gerarar varios logs no named, no exemplo abaixo estamos gerando um log com um nível dinâmico de todas as requisições de tradução de endereço.
+
+```bash
+logging {
+        channel weslley {
+           file "data/requisicoes.log";
+           severity dynamic;
+        };
+		category queries {
+		   weslley;
+        };
+};
+
+```
+* logging - Define que será gerado um log
+* channel - define 	um nome de bloco
+* file    - aonde será escrito os logs gerenciados
+* severity - Trabalha com tipos de erros (critical, warn, error) dynamic irá trabalhar com todos os níveis de erros.
+* category - define o que será armazenado dentro do arquivo (queries, config, rede)
+* weslley referencia o channel onde os logs de queries serão gravados.
+
+ Referencia de [Parâmetros](https://www.zytrax.com/books/dns/ch7/logging.html)
+
+
+# **Zonas de DNS**
+Uma zone de Dns é basicamente a um arquivo com varias entradas de DNS para um endereço de domínio.
+
+```bash
+zone "weesdasilva.ops" IN {
+        type master;
+        file "weesdasilva.zone";
+};
+```
+* **zone** - Indica o nome do dominio.
+* **type** - Fala o que o servidor é para aquele domínio (master, slave, cache)
+* **file** - arquivo que contem as entradas de DNS daquele dominio.
+
+**Arquivo de zona:**
+
+```bash
+$TTL 1h
+@ IN SOA centos.weesdasilva.ops. admin.weesdasilva.ops. (
+		01     ; serial
+		28800  ; refresh (8h)
+		7200   ; retry (2h)
+	  604800 ; expire (7d)
+		3600   ; negative caching (1h)	 
+)
+
+          NS centos.weesdasilva.ops.
+@    IN   NS centos.weesdasilva.ops.
+          MX 5  mail
+					MX 10 mail2
+
+centos  A   10.10.0.1
+mail    A   10.10.0.1
+mail2   A   10.10.0.1
+```

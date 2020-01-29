@@ -270,7 +270,7 @@ $TTL 1h
 @    IN   NS centos.weesdasilva.ops.
           MX 5  mail
 					MX 10 mail2
-
+@      IN A 10.10.0.1
 centos  A   10.10.0.1
 mail    A   10.10.0.1
 mail2   A   10.10.0.1

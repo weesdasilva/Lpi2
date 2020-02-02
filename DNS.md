@@ -1,7 +1,7 @@
 # **207.1**  Configuração básica do servidor DNS.
 
 # O que é?
-Dns é vem da sigla Domain name system - É um serviço que realiza a tradução de um endereço de nome para IP. Onde também é possivel realizar a tradução de um endereço para nome.
+DNS (Domain name system) - É um serviço que realiza a tradução de um endereço de nome para IP e também é possível realizar a tradução de um endereço IP para nome.
 
 # Pacotes:
 

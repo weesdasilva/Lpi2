@@ -1,4 +1,4 @@
-domínio# LPI 201 - 202
+# LPI 201 - 202
 Esse Markdown foi feito para ajudar a todos que querer conquistar a LPIC-2 Engenheiro Linux
 
 **_Tópico das provas:_**

@@ -206,3 +206,55 @@ Ou
 username=weslley
 password=4linux
 ```
+
+**Username Maps**
+
+Esse é um recurso muito interessante do samba que nos permite mapear um nome para uma conta criada.
+
+Adicione no **/etc/samba/smb.conf** a seguinte linha:
+
+```bash
+username map = path_file
+```
+
+Conteúdo do arquivo:
+```
+batata = weslley
+Weslley = weslley
+```
+
+* **account = alias** - O primeiro parâmetro e o nome da conta criada seguida do alias desejado, no exemplo acima demos o apelido **batata** para a conta **weslley**.
+
+### Security no samba.
+
+Exitem alguns modos de segunça no samba que irão alterar a sa forma de funcionamento.
+
+Para habilitar algum basta dentro do arquivo de configuração do samba adicionar o seguinte bloco:
+
+```bash
+security = modesecurity
+```
+
+* **user** - Basicamente é o modo padrão que exige credencias de autenticação para ter acesso aos compaprtilhamentos
+
+* **domain** - O samba vira um membro de um dominio onde toda a autenticação e redirecionada para um AD. obs: esse mode faz par com o parâmetro **("workgroup = BATATAS")**.
+
+* **ADS (Active Directory Security Mode)** - O samba fará parte de algum AD   
+
+Sintax do ADS:
+
+```bash
+[GLOBAL]
+...
+security = ADS
+realm = EXAMPLE.COM
+password server = kerberos.example.com  
+```
+
+Referência dos modes: [Aqui](https://web.mit.edu/rhel-doc/5/RHEL-5-manual/Deployment_Guide-en-US/s1-samba-security-modes.html)
+
+### Ingressando samba no AD.
+
+Para colocar o samba no AD é necessário ter instalado os seguintes pacotes:
+* **winbind** - Esse pacote torna possível a visualização dos usuários criados no AD.
+###libpam-winbind libnss-winbind krb5-config resolvconf

@@ -255,6 +255,143 @@ Referência dos modes: [Aqui](https://web.mit.edu/rhel-doc/5/RHEL-5-manual/Deplo
 
 ### Ingressando samba no AD.
 
-Para colocar o samba no AD é necessário ter instalado os seguintes pacotes:
-* **winbind** - Esse pacote torna possível a visualização dos usuários criados no AD.
-###libpam-winbind libnss-winbind krb5-config resolvconf
+Para ingressar o samba no AD é necessário ter instalado os seguintes pacotes:
+* **winbind** - Esse pacote fornece o winbindd, um daemon que integra autenticação e mecanismos de serviços de diretório (busca por usuário e grupo) de um domínio Windows em um sistema Linux
+* **libnss-winbind** - Pacote que irá fornecer buscas de nomes de usuarios/grupos pelo samba através do nsswitch.conf.
+* **libpam-winbind** - A autenticação de domínio Windows baseada no Windbind pode ser ativada através deste pacote.
+* **krb5-config**  - Pacote que irá trazer o kerberos 5 que é um protocolo de autenticação.
+
+Edite o **/etc/samba/smb.conf** e indique o servidor que o o samba fara parte
+
+```bash
+[GLOBAL]
+   security = ads
+   workgroup = WEESDASILVA
+   realm = weesdasilva.ops
+   netbios name = server-samba
+
+```
+
+* **security** - ads - então esse samba irá ingressar em um dominioexemplo
+* **workgroup** - Grupo de trabalho do AD.
+* **realm** - Nome do dominio que o samba fara parte.
+* **netbios name** - Nome que o samba será apresentado na rede NETBIOS.
+
+
+
+Para que o servidor faça parte do AD o mesmo tem que usar o DNS do windão server. Edite o **/etc/resolv.conf** e adicione a seguinte entrada:
+
+```bash
+nameserver 10.10.0.5 # IP do Windows Server
+```
+
+Também é necessário adicionar a criação da home sempre quando algum usuario fizer login em sua maquina. Edite o **/etc/pam.d/common-session** e adicione a seguinte entrada
+
+```bash
+session optional        pam_mkhomedir.so skel=/etc/skel umask=077
+```
+
+**net** - Ferramenta para administração de servidores sambas, com ele e pososivel conectar uma maquina em algum realm e ate mesmo verificar o status dessa conexão.
+
+Usando o net vamos forcar um join em um dominio AD. Execute o seguinte comando:
+
+```bash
+net ads join -U administrator
+```
+* **ads** - Executar funções usando transporte ADS
+* **join** - Conexão uma maquina local ao realm configurado no arquivo do samba.
+* **-U** - Usuário administrador.
+
+também conseguimos realizar vários tipos de verificação:
+
+**net -S nome-AD time** - com isso estamos pegando a hora do servidor que hospeda o AD.
+**net -S localhost -U weslley share** - Aqui verificamos os compartilhamentos de um usuario.
+
+Agora basta reiniciar os serviços do samba para que o mesmo passe a funcionar.
+
+```bash
+for service in winbind smbd nmbd
+do  
+systemctl restart ${service}
+done
+```
+
+Para testar a conexão execute:
+
+```bash
+wbinfo --ping-dc
+#Output
+checking the NETLOGON for domain[WEESDASILVA] dc connection to "WIN-QSKQ7OF48DN.weesdasilva.ops" succeeded
+```
+[Referencia Aqui](https://www.server-world.info/en/note?os=Debian_9&p=samba&f=3)
+
+#### Verificando usuários criados no ad.
+
+Após a ingressão do samba em um PDC o mesmo ja tem acesso a todas informações que existem no AD principal, vamos filtralas...
+
+**wbinfo** - Consultar informações do daemon winbind
+
+Para verificar todos os usuarios que existem no AD execute:
+
+```bash
+wbinfo -u
+```
+* **-u** - Lista todas as contas de usuarios.
+* **-g** - Lista todas os grupos.
+
+#### Comandos extras:
+
+**nmblookup** - Binario usario para consultar nomes de maquinas pelo NetBIOS
+* **-S** - Exibe por nome alem do IP o status de uma maquina no NetBios.
+
+```bash
+nmblookup -S server-samba
+
+##Output
+10.10.0.2 server-samba<00>
+Looking up status of 10.10.0.2
+	SERVER-SAMBA    <00> -         B <ACTIVE>
+	SERVER-SAMBA    <03> -         B <ACTIVE>
+	SERVER-SAMBA    <20> -         B <ACTIVE>
+	..__MSBROWSE__. <01> - <GROUP> B <ACTIVE>
+
+```
+* **-A** - Trás o memso status porém pelo endereço de IP
+
+```bash
+nmblookup -A 10.10.0.5
+
+#Output
+Looking up status of 10.10.0.5
+	WIN-QSKQ7OF48DN <00> -         B <ACTIVE>
+	WEESDASILVA     <1c> - <GROUP> B <ACTIVE>
+	WEESDASILVA     <00> - <GROUP> B <ACTIVE>
+
+```
+
+**samba-tool** - Ferramenta de gerenciamento do samba quando o mesmo se torna um AD.
+
+* **processes** - Lista os processos responsavel por manter o serviço no ar.
+* **user**  - lista os usuarios
+* **domain** - lista o dominio que o samba faz parte.
+
+```bash
+samba-tool domain info 10.10.0.5
+
+#Output
+Forest           : weesdasilva.ops
+Domain           : weesdasilva.ops
+Netbios domain   : WEESDASILVA
+DC name          : WIN-QSKQ7OF48DN.weesdasilva.ops
+DC netbios name  : WIN-QSKQ7OF48DN
+```
+
+**smbcontrol** - Gerencia os processos do samba.
+
+```bash
+smbcontrol smbd reload-config  # Recarega as configuraçõs do smbd
+smbcontrol winbind reload-config # Recarrega as configurações do winbind
+smbcontrol all reload-config     # recarrega as configurações de todos os serviços  
+smbcontrol nmbd shutdown         # Desligamento do nmbd
+
+```

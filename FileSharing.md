@@ -1,6 +1,6 @@
-# **209 Compartilhamento de Arquivos.**
+**2CompartilhamenArquivos.**
 
-## 209.1 - Configurações do servidor Samba
+209.1 - Configurações do servidor Samba
 
 O Samba fornece serviços de arquivo e impressão seguros, estáveis ​​e rápidos para todos os clientes que usam o protocolo SMB / CIFS usados para no windows.
 
@@ -395,3 +395,114 @@ smbcontrol all reload-config     # recarrega as configurações de todos os serv
 smbcontrol nmbd shutdown         # Desligamento do nmbd
 
 ```
+
+## 209.2 - Configuração do servidor NFS
+
+Nfs (Network File System) - É um procotolo que posibilita compartilhar arquivos e diretórios dentro de uma rede de computadores.
+
+Pacotes:
+
+**Debian:**
+
+* **rpcbind** -  Pacote usado pelo nfs3 para #######################################################################
+* **nfs-kernel-server** - Pacote que irá criar um servidor NFS.
+* **nfs-common** - Ferramentas de montagem NFS.
+
+**Centos:**
+* **nfs-utils** - Pacote que irá criar um servidor NFS e trará as ferramentas de montagem NFS.
+* **rpcbind** Pacote usado pelo NFS3 que irá tornar possivél a montagem .
+
+### Processos:
+
+**rpcbind "portmap"** - Responsável por mapear as portas que os clientes irão utilizar para realizar as montagem
+* **Porta:** 111
+
+**mountd "rpc.mountd"** - Daemon responsável por gerar portas dinâmicas que irão efetivamente realizar as montagem nos clientes.
+
+### Criando compartilhamento.
+
+O compartilhamento de um diretório será feito atráves do arquivo **/etc/exports**.
+
+sintax:
+
+```bash
+Caminho-Pasta Endereço-rede(Parâmetros-Compartilhamento)
+```
+
+O primeiro parametro faz referencia a pasta que você deseja compartilhas ;
+
+Seguido do endereço de ip ou rede que poderá montar esse compartilhamento ex: 10.10.0.2 ou 10.10.0.0/24 ;
+
+Após o endereço é onde colocamos diversos parâmetros para o funcionamento do compartilhamento, abaixo segue as principais opções:
+* **rw** - Habilita a leitura e escrita dentro do compartilhamento
+* **ro** - Apenas leitura
+* **sync** - Responda às solicitações somente depois que as alterações forem confirmadas no armazenamento estável.
+* **async** Diferente do sync essa opção retornará para o cliente uma resposta imediata, independente se o disco efetivou a gravação no disco com isso ganhamos performasse porém os arquivos podem ser corrompidos.
+* **no_subtree_check** Montagem em uma partição que não foi completamente ocmpartilhada. ###########################
+* **root_squash** - Quando um usuário root acessa o compartilhamento o nfs irá tornar esse usuário anonimo.
+* **no_root_squash** - Com isso o usuário terá permissão de root no compartilhamento.
+* **all_squash** - Essa opção e para usuarios onde o nfs torna todo o acesso para um usuario anonimo.
+* **no_all_squash** - Opção padrão que mantém os uid e gid dos usuários durante a conexão.
+
+
+### Comandos de gerenciamento
+
+**exportfs** - Binário que efetiva o compartilhamento dos diretórios descritos dentro de **/etc/exports**. obs: Quando o compartilhamento e efetivado o binário replica as informações dentro do **/var/lib/nfs/etab**, arquivo parecido com o **fstab** que será reponsavel por disponibilizar o compartilhamento no momento do boot.
+* Sem parametro o exportfs mostra todos os compartilhamentos.
+* **-a** - Exporte ou não exporte todos os diretórios.
+* **-v** - Mostra os compartilhamentos com todos os parâmetros habilitados.
+* **-r** - Reexporta os compartilhamentos.
+* **-au** - Unexport todos os compartilhamentos.
+
+O exportfs também nos possibilita montar um compartilhamento temporário:
+
+```bash
+exportfs 10.10.0.1:/etc -o rw,sync,no_root_squash
+```
+* O primeiro parametro e passar com quem será feito o compartilhamento seguido pelo diretorio a ser compartilhado separado por um ":".
+* Depois com o **-o** e passado os parametros de compartilhamento
+
+**showmount** - Mostra os compartilhamentos disponíveis do NFS.
+* **-e** - Mostra a lista de exportação do nfs. também é possível mostrar os compartilhamentos disponíveis para um IP tanto cliente qanto servidor.
+```
+showmount -e 10.10.0.2
+```
+* **-d** - Listar apenas os diretórios montados por algum cliente.
+
+
+**nfsstat** - Lista as estatisticas de um servidor NFS.
+* **-s** - mostra as estatísticas do SERVER
+* **-c**  - mostra as estatísticas do CLIENTE
+
+###Pontos importantes:
+
+O NFS usa um pseudo Filesystem, então sempre quando a uma montagem do / do compartilhamento será apresentado apenas os compartilhamentos disponíveis para o cliente.
+
+```bash
+mount.nfs 10.10.0.2:/ /opt/
+
+##Output
+home  opt  var
+```
+
+Para alterar o pseudo o filesystem padrão basta incluir em algum compartilhamemnto o parametro:
+* **fsid=0**
+
+Assim esse compartilhamento passara a ser a raiz com compartilhamento.
+
+### TcpWappers
+
+É possível integrar o NFS com as ACLS do sistema, Para bloquear a montagem dos compartilhamentos adicione no arquivo **/etc/hosts.deny**:
+
+```bash
+rpc.mountd: 10.10.0
+```
+* O primeiro parâmetro faz referencia ao nome do serviço.
+* Já o segundo se refere a uma rede ou endereço especifico.
+
+Para bloquear a listagem dos compartilhamentos adicione no mesmo arquivo:
+
+```bash
+rpcbind: 10.10.0.
+```
+* Assim a exibição dos compartilhamentos serão bloqueadas Obs: A montagem ainda poderá ser feita caso apenas essa linha esteja presente.

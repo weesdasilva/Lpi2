@@ -398,9 +398,16 @@ smbcontrol nmbd shutdown         # Desligamento do nmbd
 
 ## 209.2 - Configuração do servidor NFS
 
-Nfs (Network File System) - É um procotolo que posibilita compartilhar arquivos e diretórios dentro de uma rede de computadores.
+Nfs (Network File System) - É um procotolo que possibilita compartilhar arquivos e diretórios dentro de uma rede de computadores.
 
-Pacotes:
+O Nfs atualmente está na sua versão 4, essa versão conta com varias otimizações se comparada com as versões anterioes, confira alguma delas:
+* A v4 trabalha com estado onde as informações sobre um objeto são mantidas pelo servidor e podem ser informadas para algum cliente que tenha interesse em um mesmo objeto.
+* Ele trabalha por padrão com o protocolo TCP.
+* Também é possível trabalhar com ACL para bloqueio ou liberação de algum objeto.
+
+[Referencia](https://www.ibm.com/support/knowledgecenter/en/ssw_ibm_i_73/ifs/rzaaxnfs3cmp.htm)
+
+##### **Pacotes:**
 
 **Debian:**
 
@@ -438,7 +445,11 @@ Após o endereço é onde colocamos diversos parâmetros para o funcionamento do
 * **ro** - Apenas leitura
 * **sync** - Responda às solicitações somente depois que as alterações forem confirmadas no armazenamento estável.
 * **async** Diferente do sync essa opção retornará para o cliente uma resposta imediata, independente se o disco efetivou a gravação no disco com isso ganhamos performasse porém os arquivos podem ser corrompidos.
-* **no_subtree_check** Montagem em uma partição que não foi completamente ocmpartilhada. ###########################
+* **no_subtree_check** -  O subtree_check é feito quando um subdiretório é compartilhado mas
+a partição em que o diretório está não. Nesses casos o NFS faz uma checagem para verificar
+se o subdiretório continua na mesma partição. O no_subtree_check desabilita essa
+verificação. É a opção padrão
+
 * **root_squash** - Quando um usuário root acessa o compartilhamento o nfs irá tornar esse usuário anonimo.
 * **no_root_squash** - Com isso o usuário terá permissão de root no compartilhamento.
 * **all_squash** - Essa opção e para usuarios onde o nfs torna todo o acesso para um usuario anonimo.
@@ -459,7 +470,7 @@ O exportfs também nos possibilita montar um compartilhamento temporário:
 ```bash
 exportfs 10.10.0.1:/etc -o rw,sync,no_root_squash
 ```
-* O primeiro parametro e passar com quem será feito o compartilhamento seguido pelo diretorio a ser compartilhado separado por um ":".
+* O primeiro parâmetro e passar com quem será feito o compartilhamento seguido pelo diretorio a ser compartilhado separado por um ":".
 * Depois com o **-o** e passado os parametros de compartilhamento
 
 **showmount** - Mostra os compartilhamentos disponíveis do NFS.
@@ -506,3 +517,19 @@ Para bloquear a listagem dos compartilhamentos adicione no mesmo arquivo:
 rpcbind: 10.10.0.
 ```
 * Assim a exibição dos compartilhamentos serão bloqueadas Obs: A montagem ainda poderá ser feita caso apenas essa linha esteja presente.
+
+### Desabilitando o NFSV4
+
+**Debian:**
+Para desabilitar o NFS4 basta adicionar a linha a seguir no arquivo /etc/default/nfs-kernel-server.
+
+```bash
+RPCMOUNTDOPTS="--no-nfs-version 4"
+```
+
+**Centos:**
+Já no Centos edite o arquivo **/etc/sysconfig/nfs** e adicione a seguinte linha:
+
+```bash
+RPCIDMAPDARGS="--no-nfs-version 4"
+```

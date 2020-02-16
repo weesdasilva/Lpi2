@@ -157,3 +157,47 @@ Obs: Também é possivel definir isso de forma permanente denntro de **/etc/defa
 Protocolo que possibilita que um cliente IPV6 se alto configure.
 
 Obs: Esse protocolo e instalado através do pacote radvd.
+
+## PAM (Pluggable Authentication Modules)
+
+O pam fornece uma interface de autenticação para que aplicações consigam se comunicar com recursos dentro do sistema.
+
+![Imagens](/imagens/pam01.jpg)
+
+**Arquivos**
+
+* /etc/pam.conf
+* /etc/pam.d
+
+**Configurações:**
+
+A sintax do arquivo é separada em 3 campos exemplo:
+
+```bash
+Tipo Controle Modulo Parâmetros
+
+```
+***Tipo de autenticação:***
+
+* **session**  - Algum processo que deve ser realizado após o login antes do usuario receber o acesso. ex: Exibir o MOTD.
+* **account**  - Verifica se o usuario pode usar o serviço. ex: Checagem no sistema para ver se o usuario está ou não bloqueado.
+* **password** - Definição referente a atualização da autenticação. **ex:** Verificação de token
+* **auth**     - verifica a autenticidade do usurário. **ex:** Autenticação via ldap, kerberos, biometria etc.
+
+***Controle:***
+
+* **requisite** - Se o modulo falhar, todo o processo e interrompido.
+* **required** - Se o modulo falhar o acesso é negado, mas os demais módulos serão invocados.
+* **sufficient** - Se o modulo tiver sucesso é suficiente não importa se as outras falharem.
+* **optional** - sucesso ou falha não e relevante, amenos que seja o unico.
+
+***Módulo:***
+
+* **pam_unix.so** - Relacionado com o passwd/shadow, autenticação de sistema.
+* **pam_ldap.so** - Acesso via LDAP.
+* **pam_cracklib.so** - Checagem de senhas fracas
+* **pam_listfile.so** - Uso de arquivos externos de controle. obs: através desse modulo e possivel bloquear o acesso ssh de alguns usuarios através de um arquivo externo.
+* **pam_console.so** - COntroole de acesso ao console por usuario.
+* **pam_time.so** - recurso de controle por horario.
+* **pam_sss.so** - uso do SSS
+* **pam_krb5.so** - uso do kerberos 5

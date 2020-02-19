@@ -171,7 +171,7 @@ O pam fornece uma interface de autenticação para que aplicações consigam se 
 
 **Configurações:**
 
-A sintax do arquivo é separada em 3 campos exemplo:
+A sintaxe do arquivo é separada em 3 campos exemplo:
 
 ```bash
 Tipo Controle Modulo Parâmetros
@@ -201,3 +201,83 @@ Tipo Controle Modulo Parâmetros
 * **pam_time.so** - recurso de controle por horario.
 * **pam_sss.so** - uso do SSS
 * **pam_krb5.so** - uso do kerberos 5
+
+Obs:
+
+No **Debian** os modulos estão localizados em: ***/lib/x86_64-linux-gnu/security/***
+
+No Centos estão localizados em: ***/usr/lib64/security/***  
+
+#### Pam com LDAP
+
+```
+auth sufficient pam_ldap.so
+auth required pam_unix.so try_first_pass
+```
+
+* Se a autenticação de um usuário falhar o modulo será ignorado e os demais executados.
+* Caso a autenticação não seja feita logo em seguida o pam requer uma autenticação local com a senha informada no modulo anterior, caso falhe novamente o processo é interrompido.
+
+```
+account sufficient pam_ldap.so
+account required pam_unix.so
+```
+
+*  **Account** - é verificado se o login dará acesso a conta requisitada.
+
+## SSSD (System Security Services Daemon)
+
+Implementa melhoras no processo de autenticação do onde ele fornecerá uma interface entre o PAM, NSS e o sistema.
+
+***Observações:***
+
+* o SSD é visto bastante em autenticação usando o AD.
+* Ele possui um arquivo único de configuração
+* Usa cache, então os clientes mesmo Offlines conseguem realizar as autenticações.
+
+## 210.4 LDAP (Lighweighted Directory Access Protocol)
+
+É uma forma leve de um protocolo de acesso a diretórios, onde nós possibilita armazenar e gerenciar dados em uma base no modelo de arvore de diretórios.
+
+**Características:**
+
+* Muito usado para armazenar informações de usuários, equipamentos, funcionários etc.
+* Modelo favorece a performasse na leitura porem desfavorece a escrita.
+Cada nó representa um conjunto de atributos e valores
+
+![Imagens](/imagens/ldap01.png)
+
+* ***DC (Domain component)*** - Representa os componentes de um dominio (Nome, empresa etc.)
+* ***OU (Organizational Unit)*** - Representa a organização de unidades.
+* ***CN (Common Name)*** - Representa o nome comum de algum objeto.
+* ***DN (Distinguished Nam)*** - O DN é realmente o nome completo da entrada usado para identificar um objeto dentro da hierarquia de diretórios.
+* ***O (organizationName)*** - Armazena o nome da organização.
+
+**Schemas** - São conjutos de ObjectClasses
+
+**ObjectClasses** - São um conjunto de atributos que nós possibilita atribuir nome, Telefone, E-mail e ate mesmo cargo para um atributo.
+
+**Pacotes:**
+
+**Debian:**
+* **slapd** - Server do LDAP.
+* **ldap-utils** - Ferramentas do cliente LDAP.
+
+**Centos:**
+* **openldap** - Server LDAP.
+* **openldap-servers** - Trás para o sistema os componentes do LDAP por exemplo os Schemas.
+* **openldap-clients** - Ferramentas do cliente LDAP.
+
+
+**Files Config:**
+
+**Debian:**
+
+* **/etc/slapd/slapd.conf** - Arquivo com a configuração principal do serviço.
+* **/etc/slapd/slapd.d** - Diretório com a configuração principal do serviço
+* **/etc/default/slapd** - Arquivo de parametrização do daemon.
+* **/etc/slapd/ldap.conf** Arquivo do cliente ldap.
+
+**Centos:**
+
+* **/etc/openldap/ldap.conf** -  Diretório com a configuração principal do serviço.

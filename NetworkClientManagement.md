@@ -281,3 +281,145 @@ Cada nó representa um conjunto de atributos e valores
 **Centos:**
 
 * **/etc/openldap/ldap.conf** -  Diretório com a configuração principal do serviço.
+
+## Primeiras confgurações:
+
+Vamos ver as primeiras configurações no **debian** . Como o ldap tem 2 formas de configurações a primeira via arquivo e a segunda via diretorio preciosamos definir qual será usada, isso é editavel dentro do arquivo **/etc/default/slapd** com o seguinte parâmetro:
+
+```bash
+SLAPD_CONF=/etc/slapd/slapd.conf
+```
+
+* **Observação:** Caso a opção estiver vazia o ldap considerará por padrão o arquivo como configuração.
+* Existe um modelo de arquivo do slapd dentro de ***/usr/share/doc/slapd/examples/slapd.conf***
+
+
+#### Principais opções do arquivo de configuração.
+
+```bash
+include         /etc/ldap/schema/nis.schema
+include         /etc/ldap/schema/inetorgperson.schema
+loglevel        none
+modulepath      /usr/lib/ldap
+suffix          "dc=weesdasilva,dc=ops"
+rootdn          "cn=admin,dc=weesdasilva,dc=ops"
+rootpw          Senha or P!as\#ord  
+directory       "/var/lib/ldap"
+
+### Definição ACLS exemplo1
+access to attrs=userPassword,shadowLastChange
+        by dn="cn=admin,dc=weesdasilva,dc=ops" write
+        by anonymous auth
+        by self write
+        by * none
+
+### Definição ACLS exemplo2
+access to *
+        by dn="dc=admin,dc=weesdasilva,dc=ops" write
+        by * read
+
+
+
+```
+* **include** - Bem no inicio topo do arquivo existem algumas inclusões de ***Schemas*** que carregaram diversoso tipos de ***ObjectClass***
+* **loglevel** - Representa um nível de log que vai de 1 até 32768 onde o 1 é o maior nível de verbosidade.
+* **modulepath** - Onde estão armazenados os modulos que o ldap irá usar.
+* **suffix** - Define que será o nome da estrutura que será usada para organizar os dados dentro da base LDAP.
+* **rootdn** - Define quem será o administrador da base ldap.
+* **rootpw** - Define a senha para o admin da base Obs: É possivel passar a senha em texto puro ou basta usar o comando **slappasswd** para gerar um hash de senha.
+* **directory** - Onde que os bancos de dados estarão fisicamente armazenados.
+
+***Acls no LDAP irão definir o que cada usuário poderá fazer dentro da arvore.***
+
+#### Exemplo de ACL 1
+
+* **access to attr** - Define o acesso a algum atributo EX: **userPassword** "Senha do usuário" - **shadowLastChange** "Ultima alteração da senha".
+* **by dn="cn=admin,dc=weesdasilva,dc=ops" write** - O administrador poderá escrever alterar a senha de  algum usuario.
+* **by anonymous auth** - Para aos usuarios anonymos terem acesso a estes atributos eles terão que autenticar.
+* **by self write** - Self refere-se ao propio usuario então os mesmos poderam trocar suas propias senhas.
+* **by * none** Por fim todos os elementos que não forem o admin, self (user) e anonymous serão bloqueados.
+
+#### Exemplo de ACL 2
+
+* **access to *** - Define o acesso a toda a arvore.
+* **by dn="dc=admin,dc=weesdasilva,dc=ops" write** - O usuario admin terá permissão de escrita.
+* **by * read** - E todos os outros elementos poderam apenas ler.
+
+Para verificar se as configurações estão certas execute **slaptest**
+
+### Comandos de gerenciamento
+
+***SLAP...*** - São comandos de gerenciamento lado servidor
+
+**slaptest** - Binário que irá testar todos os parâmetros do arquivo de configuração do ldap.
+* **-f** - Seleciona um arquivo a ser testado.
+* **-F** - Testa as configurações em um diretorio.
+
+**slapcat** - Mostra um dump do que existe hoje na sua arvore no formato .ldif.
+* **-l** - Grava a saida dentro de um arquivo.
+* **-f** - Por padrão ele vai no diretorio do ldap, o -f passa um arquivo de verificação.
+
+**slapadd** - Adiciona entradas diretamente nos arquivos do ldap.
+
+**ldapmodify** - Modifica entradas de uma base.
+
+**slappasswd** - Gera um hash de senha para o ldap.
+
+* **slapindex** - Slapindex é usado para regenerar índices slapd
+
+***LDAP...*** - Comandos lado cliente.
+
+**ldapadd** - Modifica ou Adiciona entradas dentro de uma base LDAP local ou remota.
+- **-x** - Passa uma autenticação simples.
+- **-h** - Seleciona um host para o acesso.
+- **-D** - Passa um binddn para Acesso.
+- **-w** - Senha para uma autenticação simples obs: é possivel usar o **-w** para passar a senha através de um arquivo ou o **-W** para que seja solicitando a senha.
+* **-f** - file com as entradas.
+
+```bash
+ldapadd -x -D "cn=admin,dc=weesdasilva,dc=ops" -w4linux -f file.ldif
+```
+
+File : [Clique aqui para acesso ao .ldif](http://dontpad.com/arquivo-ldif-estudos-hash(ijidjvidbvibdfjjvbifdbvionvoionrvnre))
+
+## 210.3 LDAP (Lighweighted Directory Access Protocol)
+
+No modulo anterior desse arquivo todas as configurações foram feitas no arquivo ***/etc/ldap/slapd.conf*** agora iremos configurar a base usando o diretorio ***/etc/ldap/slapd.d***
+
+crie um ldif com o seguinte conteudo:
+
+```
+dn: olcDatabase={2}hdb,cn=config
+changetype: modify
+replace: olcSuffix
+olcSuffix: dc=weesdasilva,dc=ops
+
+dn: olcDatabase={2}hdb,cn=config
+changetype: modify
+replace: olcRootDN
+olcRootDN: cn=admin,dc=weesdasilva,dc=ops
+
+dn: olcDatabase={2}hdb,cn=config
+changetype: modify
+replace: olcRootPW
+olcRootPW: {SSHA}tn8H7tOLnLaUVlqzErZhCBrN2U09Yoba
+```
+
+* Esse ldif irá modificar algumas entradas do diretorio de configuração de base.
+* A primeira modificação será no **suffix** que é a identificação da base.
+* Separado por uma **linha** passamos a proxima alteração que é o usuario admin da bastante  
+* E por ultimo é alterado a senha desse usuario.
+
+**slapcat -b cn=config** - lista toda a configuração padrão do ldap configurado pelo diretorio.
+
+
+**ldapmodify -Y EXTERNAL -H ldapi:/// -f db.ldif** - Aplica o arquivo dentro da base.
+* **-Y** - Mecanismo de autenticação que impede que a senha trafegue em texto plano.
+* **-H** - URI de acesso ao LDAP **(ldapi:/// ldap:/// ldaps:///)**
+* **-f** - file a ser aplicado.
+
+###### No formato de diretorio temos que adicionar os Schemas para que eles sejam reconhecidos.
+
+* **ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/cosine.ldif**
+* **ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/nis.ldif**
+* **ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/inetorgperson.ldif**

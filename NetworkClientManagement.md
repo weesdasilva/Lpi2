@@ -423,3 +423,103 @@ olcRootPW: {SSHA}tn8H7tOLnLaUVlqzErZhCBrN2U09Yoba
 * **ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/cosine.ldif**
 * **ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/nis.ldif**
 * **ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/inetorgperson.ldif**
+
+
+## Buscas com filtros em uma base LDAP (Ldapsearch).
+
+É importante entendermos como eu posso realizar uma busca por areibutos especifica dentro de uma base LDAP, para isso vamos dar uma olhada nos operadores do ***ldapsearch***
+
+* **|** - Representa "ou" em uma querie
+* **&** - Representa "e" em uma querie
+* **!** - Trabalha com negação que não seja um objeto.
+
+```
+ldapsearch -x -D "cn=admin,dc=weesdasilva,dc=ops" -b "dc=weesdasilva,dc=ops" -w4linux cn=Ricardo
+```
+* Essa querie irá nos retornar todo elemento que tenha o ***CN*** igual a ***ricardo***
+
+```
+ldapsearch -x -D "cn=admin,dc=weesdasilva,dc=ops" -b "dc=weesdasilva,dc=ops" -w4linux sn=A*
+```
+* Aqui irá retornar todo elemento que comece com a letra **A** ou **a**.
+
+```
+ldapsearch -x -D "cn=admin,dc=weesdasilva,dc=ops" -b "dc=weesdasilva,dc=ops" -w4linux mail=*Carlo*
+```
+* O resultado será todo elemento que tem **carlos** no meio.
+
+```
+ldapsearch -x -D "cn=admin,dc=weesdasilva,dc=ops" -b "dc=weesdasilva,dc=ops" -w4linux (|(cn=*Carlos*)(cn=Daiana))"
+```
+* Irá trazer os usuario com que tenham o cn igual a **carlos** ou **daiana**.
+
+```
+ldapsearch -x -D "cn=admin,dc=weesdasilva,dc=ops" -b "dc=weesdasilva,dc=ops" -w4linux "(&(cn=*Carlos*)(!(sn=Almeida)))"
+```
+* Trará todo objeto com **cn** igual a **carlos** e que não tenha o **sn** igual a **almeida**.
+
+## Adicionando entradas (Ldapadd)
+
+Agora veremos como adicionar novas entradas a nossa base ldap com o comando **ldapadd** obs: O **ldapadd** é um link para o **ldapmodify**, no final os 2 comandos farão a mesma coisa.
+
+***LDIF BASE:***
+
+```bash
+dn: cn=wees,ou=funcionarios,ou=desenvolvimento,dc=weesdasilva,dc=ops
+objectClass: inetOrgPerson
+cn: wees
+sn: dasilva
+mail: ricardo@weesdasilva.ops
+```
+Adicionando novo usuario:
+
+```bash
+ldapadd -x -D "cn=admin,dc=weesdasilva,dc=ops" -w4linux -f novo-user.ldif
+```
+Verifique se a entrada foi adicionada:
+
+```
+ldapsearch -x -LLL -D "cn=admin,dc=weesdasilva,dc=ops" -b "dc=weesdasilva,dc=ops" -w4linux "(|(cn=we*)(sn=da*))"
+```
+
+## Removendo entradas (Ldapdelete)
+
+Igual a adição eu consigo remover uma entrada por um arquivo **.ldif** ou basta eu passar a entrada que desejo remover pela linha de comando.
+
+```bash
+ldapdelete -x -D "cn=admin,dc=weesdasilva,dc=ops" -w4linux "cn=wees,ou=funcionarios,ou=desenvolvimento,dc=weesdasilva,dc=ops"
+```
+
+## Modificando entradas já criadas (Ldapmodify)
+
+Veja como modificaremos uma entrada por um arquivo LDIF.
+
+***LDAP BASE:***
+
+**Modificação:**
+```bash
+dn: cn=wees,ou=funcionarios,ou=desenvolvimento,dc=weesdasilva,dc=ops
+changetype: modify
+replace: mail
+mail: weesdasilva@weesdasilva.ops
+```
+* Aqui estamos alterando o campo mail para um novo valor
+
+**deleção**
+
+```bash
+dn: cn=wees,ou=funcionarios,ou=desenvolvimento,dc=weesdasilva,dc=ops
+changetype: delete
+delete: mail
+```
+* Aqui deletamos um elemento.
+
+**Adição**
+
+```bash
+dn: cn=wees,ou=funcionarios,ou=desenvolvimento,dc=weesdasilva,dc=ops
+changetype: add
+add: mail
+mail: weesdasilva@weesdasilva.ops
+```
+* Aqui adicionamos um novo campo.

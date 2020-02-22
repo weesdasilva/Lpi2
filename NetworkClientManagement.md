@@ -523,3 +523,39 @@ add: mail
 mail: weesdasilva@weesdasilva.ops
 ```
 * Aqui adicionamos um novo campo.
+
+## Alerando senha dos usuarios (Ldappasswd)
+
+Primeiro adicione um usuario com senha em sua base:
+
+***LDIF BASE:***
+
+```bash
+dn: uid=wees,ou=funcionarios,ou=suporte,dc=weesdasilva,dc=ops
+objectClass: top
+objectClass: account
+objectClass: posixAccount
+objectClass: shadowAccount
+cn: wees
+uid: wees
+uidNumber: 1000
+gidNumber: 1000
+homeDirectory: /home/wees
+loginShell: /bin/bash
+gecos: wees
+userPassword: 123456
+```
+
+```
+ldapadd -x -D "cn=admin,dc=weesdasilva,dc=ops" -w4linux -f novo-user.ldif
+```
+* Aplicando o **.ldif**
+
+Para alterar a senha deste usuario digite:
+
+```
+ldappasswd -x -h localhost -D "cn=admin,dc=weesdasilva,dc=ops" -w4linux -S "uid=wees,ou=funcionarios,ou=suporte,dc=weesdasilva,dc=ops"
+```
+* **-h** -  Define qual host esse ldif será aplicado.
+* **-s**  - Define a nova senha pelo cli.
+* **-S**  - O shell pedirá para que a senha seja digitada.

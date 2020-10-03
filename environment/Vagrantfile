@@ -1,0 +1,56 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+BOX1 = "centos/7"
+BOX2 = "debian/buster64"
+BOX3 = "gusztavvargadr/ubuntu-desktop"
+NETWORK = "10.12.3."
+
+Vagrant.configure("2") do |config|
+
+  config.vm.provision "shell", inline: <<-SHELL
+  echo "10.12.3.10 centos.exemplo.com centos" >> /etc/hosts
+  echo "10.12.3.20 debian.exemplo.com debian" >> /etc/hosts
+  SHELL
+
+  config.vm.define "centos" do |centos|
+    centos.vm.hostname = "centos"
+    centos.vm.box = BOX1
+    centos.vm.box_check_update = false
+    centos.vm.network "private_network",ip: NETWORK+"10", dns:"1.1.1.1"
+
+    centos.vm.provider "virtualbox" do |vb|
+      vb.name = "CentOS"
+      vb.memory = "1024"
+      vb.customize ["modifyvm", :id, "--groups", "/LPI2"]
+    end
+  end
+
+  config.vm.define "debian" do |debian|
+    debian.vm.hostname = "debian"
+    debian.vm.box = BOX2
+    debian.vm.box_check_update = false
+    debian.vm.network "private_network",ip: NETWORK+"20", dns:"1.1.1.1"
+
+    debian.vm.provider "virtualbox" do |vb|
+      vb.name = "Debian"
+      vb.memory = "1024"
+      vb.customize ["modifyvm", :id, "--groups", "/LPI2"]
+    end
+   end 
+
+  config.vm.define "environment-ubuntu" do |ubuntu|
+    ubuntu.vm.hostname = "environment"
+    ubuntu.vm.box = BOX3
+    ubuntu.vm.box_check_update = false
+    ubuntu.vm.network "private_network",ip: NETWORK+"30", dns:"1.1.1.1"
+
+    ubuntu.vm.provider "virtualbox" do |vb|
+      vb.name = "Environment-Ubuntu"
+      vb.memory = "2024"
+      vb.customize ["modifyvm", :id, "--groups", "/LPI2"]
+    end
+  end
+
+  config.vm.provision "shell", path: "script.sh"
+end
